@@ -1,3 +1,7 @@
 ssr:
     resource: "@SSRBundle/Resources/config/routing.yml"
     prefix:   /
+    
+SSRBundle_public:
+    resource: "@SSRBundle/Resources/config/routing/krakow.yml"
+    prefix:   /krakow
