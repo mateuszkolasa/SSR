@@ -1,0 +1,3 @@
+ssr:
+    resource: "@SSRBundle/Resources/config/routing.yml"
+    prefix:   /

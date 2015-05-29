@@ -1,0 +1,3 @@
+ssr_homepage:
+    path:     /
+    defaults: { _controller: SSRBundle:Default:index }
