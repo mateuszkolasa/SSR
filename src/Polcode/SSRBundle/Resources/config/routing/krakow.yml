@@ -6,3 +6,7 @@ ssr_krakow_download:
     path:     /download
     defaults: { _controller: SSRBundle:Cities/Krakow:download }
     
+ssr_krakow_api:
+    path:     /api
+    defaults: { _controller: SSRBundle:Cities/Krakow:api }
+    

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html ng-app="ssr">
     <head>
         <meta charset="UTF-8" />
         <title>{% block title %}Welcome!{% endblock %}</title>
@@ -7,7 +7,51 @@
         <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
     </head>
     <body>
-        {% block body %}{% endblock %}
+        
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.0/angular.js"></script>
+        <script type="text/javascript">
+        (function(){
+        
+            var app = angular.module('ssr', [ ]).config(['$interpolateProvider', function ($interpolateProvider) {
+                $interpolateProvider.startSymbol('[[');
+                $interpolateProvider.endSymbol(']]');
+            }]);
+
+            app.controller('StopsController', [ '$http', function($http) {
+        		var st = this;
+        		this.stops = [];
+
+        		$http.get('/api/stops/{{ city }}').success(function(data){
+            		st.stops = data;
+            	});
+            }]);
+        
+            app.controller('TablicaController', [ '$http', function($http) {
+        		var tablica = this;
+        		this.trams = [];
+
+        		$http.get('/{{ city }}/api').success(function(data){
+            		tablica.trams = data;
+            	});
+
+        		this.datetime = new Date();
+            }]);
+           
+        })();
+        </script>
+        <div style="width: 20%; float: left;">
+            <h1>Przystanki</h1>
+            <ul ng-controller="StopsController as st">
+                <li ng-repeat="stop in st.stops">
+                    <a href="#">[[ stop.name ]]</a>
+                </li>
+            </ul>
+        </div>
+        
+        <div style="width: 80%; margin-left: 20%;">
+            {% block body %}{% endblock %}
+        </div>
+        
         {% block javascripts %}{% endblock %}
     </body>
 </html>

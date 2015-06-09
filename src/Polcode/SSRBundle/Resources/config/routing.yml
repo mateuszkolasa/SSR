@@ -1,3 +1,8 @@
+ssr_api:
+    path:     /api/{stock}/{city}
+    defaults: { _controller: SSRBundle:Default:api, stock: 'stops', city: 'krakow' }
+    
 ssr_homepage:
-    path:     /
-    defaults: { _controller: SSRBundle:Default:index }
+    path:     /{city}
+    defaults: { _controller: SSRBundle:Default:index, city: 'krakow' }
+    

@@ -3,18 +3,25 @@
 namespace Polcode\SSRBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class DefaultController extends Controller {
     
-    public function indexAction() {
-        
-        $depertuares = $this->getDoctrine()->getManager()->getRepository('SSRBundle:Depertuare')->findAll();
-        
-        foreach($depertuares as $dep) {
-            print_r($dep->hour);
+    public function indexAction($city) {
+        return $this->render('SSRBundle:Default:index.html.twig', array('city' => $city));
+    }
+    
+    public function apiAction($stock, $city) {
+        if($stock == 'stops') {
+            $entities = $this->getDoctrine()->getRepository('SSRBundle:Stop')->findAll();
+            
+            $stops = array();
+            foreach($entities as $stop) {
+                $stops[] = array('name' => $stop->name);
+            }
+            
+            return new JsonResponse($stops);
         }
-        
-        return $this->render('SSRBundle:Default:index.html.twig', array('name' => 'NAME'));
     }
     
 }

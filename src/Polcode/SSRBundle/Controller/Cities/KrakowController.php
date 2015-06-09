@@ -9,15 +9,29 @@ use Goutte\Client;
 use Polcode\SSRBundle\Entity\Line;
 use Polcode\SSRBundle\Entity\Stop;
 use Polcode\SSRBundle\Entity\Depertuare;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class KrakowController extends CityController {
     
     private $dev = false;
     private $entities = true;
-    private $limit = 1;
+    private $limit = 10;
     
     public function indexAction() {
         return $this->render('SSRBundle:Cities/Krakow:index.html.twig', array('name' => 'Kraków'));
+    }
+    
+    public function apiAction() {
+        $depertuares = $this->getDoctrine()->getManager()->getRepository('SSRBundle:Depertuare')->findAll();
+        
+        $returnArray = array();
+        $x = 0;
+        foreach($depertuares as $dep) {
+            $returnArray[] = array('line' => $dep->line->number, 'direction' => $dep->line->direction, 'time' => $dep->hour .':' . $dep->minute);
+            if(++$x > 4) break;
+        }
+        
+        return new JsonResponse($returnArray);
     }
     
     public function downloadAction() {
