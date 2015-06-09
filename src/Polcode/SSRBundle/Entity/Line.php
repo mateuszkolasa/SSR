@@ -32,11 +32,21 @@ class Line {
      */
     public $stops;
     
+    /**
+     * @ORM\OneToMany(targetEntity="Depertuare", mappedBy="line")
+     */
+    public $depertuares;
+    
     public function __construct() {
         $this->stops = new ArrayCollection();
+        $this->depertuares = new ArrayCollection();
     }
     
     public function addStop($stop) {
         $this->stops->add($stop);
+    }
+    
+    public function addDepertuare($depertuare) {
+        $this->depertuares->add($depertuare);
     }
 }

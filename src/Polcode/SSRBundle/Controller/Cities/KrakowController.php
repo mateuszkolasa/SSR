@@ -8,12 +8,13 @@ use Symfony\Component\HttpFoundation\Response;
 use Goutte\Client;
 use Polcode\SSRBundle\Entity\Line;
 use Polcode\SSRBundle\Entity\Stop;
+use Polcode\SSRBundle\Entity\Depertuare;
 
 class KrakowController extends CityController {
     
     private $dev = false;
     private $entities = true;
-    private $limit = 0;
+    private $limit = 1;
     
     public function indexAction() {
         return $this->render('SSRBundle:Cities/Krakow:index.html.twig', array('name' => 'Kraków'));
@@ -29,8 +30,7 @@ class KrakowController extends CityController {
         $stops = array();
         $counter = 0;
         $crawler->filter('li > a')->each(function ($node) use (&$em, &$stops, &$counter) {
-            if($this->limit != 0 && $counter > $this->limit) return;
-            $counter;
+            if($this->limit != 0 && $counter >= $this->limit) return;
             
             $id = str_replace('http://rozklady.mpk.krakow.pl/aktualne/p/', '', $node->link()->getUri());
             $id = str_replace('.htm', '', $id);
@@ -72,8 +72,10 @@ class KrakowController extends CityController {
                             $entity->direction = $line[1];
                             $entity->addStop($stops[$id]['OBJ']);
                             $em->persist($entity);
-                            $line['OBJ'] = $entity;
+                            //$stops[$id]['OBJ']->addLine($entity);
                         }
+                        
+                        $line['OBJ'] = $entity;
                     }
                     
                     $stops[$id]['lines'][] = $line;
@@ -83,17 +85,13 @@ class KrakowController extends CityController {
             if($this->dev) break;
         }
         
-        if($this->entities) {
-            
-        }
-        //echo '<pre>'; print_r($stops); die('---');
-        die('---');
+        if($this->entities) $em->flush();
         
         foreach($stops as $id => $stop) {
-            $x = 0; $h = 0; $lastVariable = null; $dupa = array();
+            $x = 0; $h = 0; $lastVariable = null; $depertuares = array();
             foreach($stop['lines'] as $idL => $line) {
                 $crawler = $client->request('GET', $line[2]);
-                $crawler->filter('.celldepart table tr td')->each(function ($node) use (&$stops, $id, $idL, &$x, &$h, &$dupa, &$lastVariable) {
+                $crawler->filter('.celldepart table tr td')->each(function ($node) use (&$stops, $id, $idL, &$line, &$x, &$h, &$depertuares, &$lastVariable, &$em) {
                     //nagłówki
                     if($h < 3) {
                         $h++;
@@ -103,38 +101,57 @@ class KrakowController extends CityController {
                             $h++; $x++;
                             return;
                         }
-                        if($x%6 == 0) $dupa['powszedni'][$node->text()] = array();
-                        if($x%6 == 2) $dupa['sobota'][$node->text()] = array();
-                        if($x%6 == 4) $dupa['swieto'][$node->text()] = array();
+                        if($x%6 == 0) $depertuares['powszedni'][$node->text()] = array();
+                        if($x%6 == 2) $depertuares['sobota'][$node->text()] = array();
+                        if($x%6 == 4) $depertuares['swieto'][$node->text()] = array();
 
+                        if($x%6 == 0 || $x%6 == 2 || $x%6 == 4) {
+                            $lastVariable = $node->text();
+                            $x++;
+                            return;
+                        }
+                        
                         $minutes = explode(' ', $node->text());
                         
-                        if($x%6 == 1) {
-                            foreach($minutes as $minute)
-                                if(!empty($minute) && $minute != '-') $dupa['powszedni'][$lastVariable][] = (int) preg_replace('#[a-zA-Z]#', '', $minute);  
+                        if($x%6 == 1) $type = 'powszedni';
+                        if($x%6 == 3) $type = 'sobota';
+                        if($x%6 == 5) $type = 'swieto';
+                        
+                        foreach($minutes as $minute) {
+                            $value = (int) preg_replace('#[a-zA-Z]#', '', $minute);
+                            if(!empty($minute) && $minute != '-') {
+                                $depertuares[$type][$lastVariable][] = $value;
+                            
+                                if($this->entities) {
+                                    $entity = $em->getRepository('SSRBundle:Depertuare')->findOneBy((array('type' => $type, 'line' => $line['OBJ'], 'stop' => $stops[$id]['OBJ'])));
+                                    if($entity == null) {
+                                        $entity = new Depertuare();
+                                        $entity->line = $line['OBJ'];
+                                        $entity->stop = $stops[$id]['OBJ'];
+                                        $entity->hour = $lastVariable;
+                                        $entity->minute = $value;
+                                        $entity->type = $type;
+                                        $em->persist($entity);
+                                    }
+                                }
+                            }
                         }
                         
-                        if($x%6 == 3) {
-                            foreach($minutes as $minute)
-                                if(!empty($minute) && $minute != '-') $dupa['sobota'][$lastVariable][] = (int) preg_replace('#[a-zA-Z]#', '', $minute);  
-                        }
-
-                        if($x%6 == 5) {
-                            foreach($minutes as $minute)
-                                if(!empty($minute) && $minute != '-') $dupa['swieto'][$lastVariable][] = (int) preg_replace('#[a-zA-Z]#', '', $minute);
-                        }
-                        
+                        $em->flush();
                         $lastVariable = $node->text();
                         $x++;
                     }
                 });
-                $stops[$id]['lines'][$idL][2] = $dupa;
+                $stops[$id]['lines'][$idL][2] = $depertuares;
                 if($this->dev) break;
             }
             if($this->dev) break;
         }
         
-        return new Response('<pre>' . print_r($stops, 1) . '</pre>');
+        if($this->entities) $em->flush();
+        if(!$this->entities) { echo '<pre>'; print_r($stops); die('</pre>---'); }
+        
+        return new Response('DONE!');
     }
     
 }

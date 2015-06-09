@@ -22,17 +22,23 @@ class Stop {
      */
     public $name;
     
-    /**
+    /*
      * @ORM\ManyToMany(targetEntity="Line", cascade={"persist"}, inversedBy="lines")
      * @ORM\JoinTable(name="krakow_stops_lines",
      *      joinColumns={@ORM\JoinColumn(name="line_id", referencedColumnName="id")},
      *      inverseJoinColumns={@ORM\JoinColumn(name="stop_id", referencedColumnName="id")}
      * )
      */
-    public $lines;
+    //public $lines;
+    
+    /**
+     * @ORM\OneToMany(targetEntity="Depertuare", mappedBy="stop")
+     */
+    public $depertuares;
     
     public function __construct() {
-        $this->lines = new ArrayCollection();
+        //$this->lines = new ArrayCollection();
+        $this->depertuares = new ArrayCollection();
     }
     
     public function addLine($line) {
