@@ -3,12 +3,12 @@
 {% block body %}
     Miasto: {{ city }}!
     
-    <div class="tablica" style="background: #aaa; padding: 50px 0;" ng-controller="TablicaController as tablica">
+    <div class="tablica bevel all" style="background: #aaa; padding: 50px 0;" ng-controller="TablicaController as tablica">
         <div style="background: #000; color: #fff; margin: 0 10px; box-sizing: border-box;">
-            <h1 style="font-family: Calibri;">Przystanek</h1>
+            <h1 style="font-family: Calibri;">[[ tablica.getStopID() ]]</h1>
             <table style="width: 100%; text-align: left;">
                 <tr>
-                    <th style="width: 15%; color: #fff; border-right: 3px solid #eee;"> Linia nr</th>
+                    <th style="width: 15%; color: #fff; border-right: 3px solid #eee;">Linia nr</th>
                     <th style="width: 65%; color: #fff; border-right: 3px solid #eee;">Kierunek</th>
                     <th style="width: 20%; color: #fff;">Odjazd</th>
                 </tr>
@@ -40,5 +40,88 @@
         color: orange;
         font-family: Digital;
     }
+    
+.bevel.all {
+    background: #efefef; /* default color */
+    background:
+        -moz-linear-gradient(45deg,  transparent 10px, #efefef 10px),
+        -moz-linear-gradient(135deg, transparent 10px, #efefef 10px),
+        -moz-linear-gradient(225deg, transparent 10px, #efefef 10px),
+        -moz-linear-gradient(315deg, transparent 10px, #efefef 10px);
+    background:
+        -o-linear-gradient(45deg,  transparent 10px, #efefef 10px),
+        -o-linear-gradient(135deg, transparent 10px, #efefef 10px),
+        -o-linear-gradient(225deg, transparent 10px, #efefef 10px),
+        -o-linear-gradient(315deg, transparent 10px, #efefef 10px);
+    background:
+        -webkit-linear-gradient(45deg,  transparent 10px, #efefef 10px),
+        -webkit-linear-gradient(135deg, transparent 10px, #efefef 10px),
+        -webkit-linear-gradient(225deg, transparent 10px, #efefef 10px),
+        -webkit-linear-gradient(315deg, transparent 10px, #efefef 10px);
+}
+.bevel.tlbr {
+    background: #efefef; /* default color */
+    background:
+        -moz-linear-gradient(45deg,  #efefef 10px, #efefef 10px),
+        -moz-linear-gradient(135deg, transparent 10px, #efefef 10px),
+        -moz-linear-gradient(225deg, #efefef 10px, #efefef 10px),
+        -moz-linear-gradient(315deg, transparent 10px, #efefef 10px);
+    background:
+        -o-linear-gradient(45deg,  #efefef 10px, #efefef 10px),
+        -o-linear-gradient(135deg, transparent 10px, #efefef 10px),
+        -o-linear-gradient(225deg, #efefef 10px, #efefef 10px),
+        -o-linear-gradient(315deg, transparent 10px, #efefef 10px);
+    background:
+        -webkit-linear-gradient(45deg,  #efefef 10px, #efefef 10px),
+        -webkit-linear-gradient(135deg, transparent 10px, #efefef 10px),
+        -webkit-linear-gradient(225deg, #efefef 10px, #efefef 10px),
+        -webkit-linear-gradient(315deg, transparent 10px, #efefef 10px);
+}
+.bevel.trbl {
+    background: #efefef; /* default color */
+    background:
+        -moz-linear-gradient(45deg,  transparent 10px, #efefef 10px),
+        -moz-linear-gradient(135deg, #efefef 10px, #efefef 10px),
+        -moz-linear-gradient(225deg, transparent 10px, #efefef 10px),
+        -moz-linear-gradient(315deg, #efefef 10px, #efefef 10px);
+    background:
+        -o-linear-gradient(45deg,  transparent 10px, #efefef 10px),
+        -o-linear-gradient(135deg, #efefef 10px, #efefef 10px),
+        -o-linear-gradient(225deg, transparent 10px, #efefef 10px),
+        -o-linear-gradient(315deg, #efefef 10px, #efefef 10px);
+    background:
+        -webkit-linear-gradient(45deg,  transparent 10px, #efefef 10px),
+        -webkit-linear-gradient(135deg, #efefef 10px, #efefef 10px),
+        -webkit-linear-gradient(225deg, transparent 10px, #efefef 10px),
+        -webkit-linear-gradient(315deg, #efefef 10px, #efefef 10px);
+}
+.bevel.tr {
+    background: #efefef; /* default color */
+    background:
+        -moz-linear-gradient(45deg,  #efefef 10px, #efefef 10px),
+        -moz-linear-gradient(135deg, #efefef 10px, #efefef 10px),
+        -moz-linear-gradient(225deg, transparent 10px, #efefef 10px),
+        -moz-linear-gradient(315deg, #efefef 10px, #efefef 10px);
+    background:
+        -o-linear-gradient(45deg,  #efefef 10px, #efefef 10px),
+        -o-linear-gradient(135deg, #efefef 10px, #efefef 10px),
+        -o-linear-gradient(225deg, transparent 10px, #efefef 10px),
+        -o-linear-gradient(315deg, #efefef 10px, #efefef 10px);
+    background:
+        -webkit-linear-gradient(45deg,  #efefef 10px, #efefef 10px),
+        -webkit-linear-gradient(135deg, #efefef 10px, #efefef 10px),
+        -webkit-linear-gradient(225deg, transparent 10px, #efefef 10px),
+        -webkit-linear-gradient(315deg, #efefef 10px, #efefef 10px);
+}
+.bevel.all, .bevel.trbl, .bevel.tlbr, .bevel.tr {
+    background-position: bottom left, bottom right, top right, top left;
+    -moz-background-size: 50% 50%;
+    -webkit-background-size: 50% 50%;
+    background-size: 50% 50%;
+    background-repeat: no-repeat;
+    margin-bottom: 15px;
+    padding: 15px;
+}
+
     </style>
 {% endblock %}

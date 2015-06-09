@@ -11,19 +11,12 @@
         <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.0/angular.js"></script>
         <script type="text/javascript">
         (function(){
-        
+
+			var stopID = 1;
+            
             var app = angular.module('ssr', [ ]).config(['$interpolateProvider', function ($interpolateProvider) {
                 $interpolateProvider.startSymbol('[[');
                 $interpolateProvider.endSymbol(']]');
-            }]);
-
-            app.controller('StopsController', [ '$http', function($http) {
-        		var st = this;
-        		this.stops = [];
-
-        		$http.get('/api/stops/{{ city }}').success(function(data){
-            		st.stops = data;
-            	});
             }]);
         
             app.controller('TablicaController', [ '$http', function($http) {
@@ -35,6 +28,28 @@
             	});
 
         		this.datetime = new Date();
+
+        		this.getStopID = function() {
+            		return stopID;
+            	}
+
+        		this.test = function() {
+            		alert(1234567);
+            	}
+            }]);
+
+            app.controller('StopsController', [ '$http', '$scope', function($http, $scope) {
+        		var st = this;
+        		this.stops = [];
+
+        		$http.get('/api/stops/{{ city }}').success(function(data){
+            		st.stops = data;
+            	});
+
+            	this.setStop = function(id) {
+					stopID = id;
+					//TablicaController.test;
+                };
             }]);
            
         })();
@@ -43,11 +58,11 @@
             <h1>Przystanki</h1>
             <ul ng-controller="StopsController as st">
                 <li ng-repeat="stop in st.stops">
-                    <a href="#">[[ stop.name ]]</a>
+                    <a href="#" ng-click="st.setStop(stop.id)">[[ stop.name ]]</a>
                 </li>
             </ul>
         </div>
-        
+
         <div style="width: 80%; margin-left: 20%;">
             {% block body %}{% endblock %}
         </div>

@@ -17,7 +17,7 @@ class DefaultController extends Controller {
             
             $stops = array();
             foreach($entities as $stop) {
-                $stops[] = array('name' => $stop->name);
+                $stops[] = array('id' => $stop->id, 'name' => $stop->name);
             }
             
             return new JsonResponse($stops);
