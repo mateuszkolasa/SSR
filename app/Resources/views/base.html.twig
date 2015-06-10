@@ -12,7 +12,8 @@
         <script type="text/javascript">
         (function(){
 
-			var stopID = 1;
+			var stopObject = {id: 0, name: 'Polcodowa'};
+			var href = '/{{ city }}/api/0';
             
             var app = angular.module('ssr', [ ]).config(['$interpolateProvider', function ($interpolateProvider) {
                 $interpolateProvider.startSymbol('[[');
@@ -23,18 +24,19 @@
         		var tablica = this;
         		this.trams = [];
 
-        		$http.get('/{{ city }}/api').success(function(data){
-            		tablica.trams = data;
-            	});
+        		this.test = function($http) {
+            		/*$http.get(href).success(function(data){
+                		alert('siema');
+            			tablica.trams = data;
+            		}).error(function(){
+	                	alert('siema');
+                	});*/
+        		}
 
         		this.datetime = new Date();
 
-        		this.getStopID = function() {
-            		return stopID;
-            	}
-
-        		this.test = function() {
-            		alert(1234567);
+        		this.getStop = function() {
+            		return stopObject;
             	}
             }]);
 
@@ -46,9 +48,9 @@
             		st.stops = data;
             	});
 
-            	this.setStop = function(id) {
-					stopID = id;
-					//TablicaController.test;
+            	this.setStop = function(obj) {
+                	href = '/{{ city }}/api/' + obj.id;
+					stopObject = obj;
                 };
             }]);
            
@@ -58,7 +60,7 @@
             <h1>Przystanki</h1>
             <ul ng-controller="StopsController as st">
                 <li ng-repeat="stop in st.stops">
-                    <a href="#" ng-click="st.setStop(stop.id)">[[ stop.name ]]</a>
+                    <a href="#[[ stop.id ]]" ng-click="st.setStop(stop)">[[ stop.name ]]</a>
                 </li>
             </ul>
         </div>

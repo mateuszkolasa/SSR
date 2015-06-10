@@ -11,18 +11,26 @@ use Polcode\SSRBundle\Entity\Stop;
 use Polcode\SSRBundle\Entity\Depertuare;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
+
+set_time_limit(600);
 class KrakowController extends CityController {
     
     private $dev = false;
     private $entities = true;
-    private $limit = 10;
+    private $limit = 0;
+    private $onlyTrams = true;
     
     public function indexAction() {
         return $this->render('SSRBundle:Cities/Krakow:index.html.twig', array('name' => 'Kraków'));
     }
     
-    public function apiAction() {
-        $depertuares = $this->getDoctrine()->getManager()->getRepository('SSRBundle:Depertuare')->findAll();
+    public function apiAction($stopID) {
+        
+        if($stopID == 0) {
+            $depertuares = $this->getDoctrine()->getManager()->getRepository('SSRBundle:Depertuare')->getNextDepertuares(3);
+        } else {
+            $depertuares = $this->getDoctrine()->getManager()->getRepository('SSRBundle:Depertuare')->getNextDepertuares($stopID);
+        }
         
         $returnArray = array();
         $x = 0;
@@ -74,7 +82,9 @@ class KrakowController extends CityController {
                 if($node->text() != 'Inne przystanki') {
                     $line = explode(' - > ', $node->text());
                     $tmp = explode('/', $node->link()->getUri());
-                    $tmp[count($tmp)-1] = str_replace('r', 't', $tmp[count($tmp)-1]); 
+                    $tmp[count($tmp)-1] = str_replace('r', 't', $tmp[count($tmp)-1]);
+                    
+                    if($this->onlyTrams && $line[0] >= 100) return;
                     
                     $line[] = implode('/', $tmp);
                     
@@ -93,56 +103,48 @@ class KrakowController extends CityController {
                     }
                     
                     $stops[$id]['lines'][] = $line;
+                    if($this->entities) $em->flush();
                 }
             });
                 
             if($this->dev) break;
         }
         
-        if($this->entities) $em->flush();
-        
         foreach($stops as $id => $stop) {
-            $x = 0; $h = 0; $lastVariable = null; $depertuares = array();
+            $depertuares = array();
+            if(!array_key_exists('lines', $stop)) $stop['lines'] = array();
             foreach($stop['lines'] as $idL => $line) {
                 $crawler = $client->request('GET', $line[2]);
-                $crawler->filter('.celldepart table tr td')->each(function ($node) use (&$stops, $id, $idL, &$line, &$x, &$h, &$depertuares, &$lastVariable, &$em) {
-                    //nagłówki
-                    if($h < 3) {
-                        $h++;
-                    } else {
-                        if(!ctype_digit($node->text()) && ($x%6 == 0 || $x%6 == 2 || $x%6 == 4)) {
-                            $lastVariable = $node->text();
-                            $h++; $x++;
-                            return;
-                        }
-                        if($x%6 == 0) $depertuares['powszedni'][$node->text()] = array();
-                        if($x%6 == 2) $depertuares['sobota'][$node->text()] = array();
-                        if($x%6 == 4) $depertuares['swieto'][$node->text()] = array();
-
-                        if($x%6 == 0 || $x%6 == 2 || $x%6 == 4) {
-                            $lastVariable = $node->text();
+                $crawler->filter('.celldepart table tr')->each(function ($node) use (&$stops, $id, $idL, &$line, &$depertuares, &$em) {
+                    if($node->children()->attr('class') == 'cellday' || $node->children()->attr('class') == 'cellinfo') {
+                        return;
+                    }
+                    
+                    $x = 0; $type = 'p'; $hour = 0;
+                    foreach($node->children() as $child) {
+                        if($child->getAttributeNode('class')->value == 'cellhour') {
+                            if($x%6 == 0) $type = 'p';
+                            if($x%6 == 2) $type = 's';
+                            if($x%6 == 4) $type = 'h';
+                            $hour = $child->textContent;
                             $x++;
-                            return;
+                            continue;
                         }
                         
-                        $minutes = explode(' ', $node->text());
-                        
-                        if($x%6 == 1) $type = 'powszedni';
-                        if($x%6 == 3) $type = 'sobota';
-                        if($x%6 == 5) $type = 'swieto';
+                        $minutes = explode(' ', $child->textContent);
                         
                         foreach($minutes as $minute) {
-                            $value = (int) preg_replace('#[a-zA-Z]#', '', $minute);
+                            $value = preg_replace('#[a-zA-Z]#', '', $minute);
                             if(!empty($minute) && $minute != '-') {
-                                $depertuares[$type][$lastVariable][] = $value;
-                            
+                                $depertuares[$type][$hour][] = $value;
+                        
                                 if($this->entities) {
                                     $entity = $em->getRepository('SSRBundle:Depertuare')->findOneBy((array('type' => $type, 'line' => $line['OBJ'], 'stop' => $stops[$id]['OBJ'])));
                                     if($entity == null) {
                                         $entity = new Depertuare();
                                         $entity->line = $line['OBJ'];
                                         $entity->stop = $stops[$id]['OBJ'];
-                                        $entity->hour = $lastVariable;
+                                        $entity->hour = $hour;
                                         $entity->minute = $value;
                                         $entity->type = $type;
                                         $em->persist($entity);
@@ -150,12 +152,12 @@ class KrakowController extends CityController {
                                 }
                             }
                         }
-                        
+
                         $em->flush();
-                        $lastVariable = $node->text();
                         $x++;
                     }
                 });
+                
                 $stops[$id]['lines'][$idL][2] = $depertuares;
                 if($this->dev) break;
             }

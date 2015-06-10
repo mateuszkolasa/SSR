@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 /**
  * @ORM\Entity()
  * @ORM\Table(name="krakow_depertuares")
+ * @ORM\Entity(repositoryClass="Polcode\SSRBundle\Repository\DepertuareRepository")
  */
 class Depertuare {
 
