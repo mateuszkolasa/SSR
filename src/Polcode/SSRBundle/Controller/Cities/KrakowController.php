@@ -38,6 +38,15 @@ class KrakowController extends CityController {
         foreach($depertuares as $dep) {
             $time = $dep->hour .':' . ($dep->minute<10 ? '0'.$dep->minute : $dep->minute);
             if($time == date("H:i")) $time = '> > > >';
+            else {
+                $diff = strtotime($time) - strtotime(date("H:i"));
+                $diff /= 60;
+                
+                if($diff < 59) {
+                    $time = $diff . ' min';
+                }
+            }
+            
             $returnArray[] = array('line' => $dep->line->number, 'direction' => $dep->line->direction, 'time' => $time);
             if(++$x > 9) break;
         }
@@ -169,7 +178,7 @@ class KrakowController extends CityController {
         }
         
         //if($this->entities) $em->flush();
-        if(!$this->entities && !$this->SQL) { echo '<pre>'; print_r($stops); die('</pre>---'); }
+        //if(!$this->entities && !$this->SQL) { echo '<pre>'; print_r($stops); die('</pre>---'); }
         
         if($this->SQL) {
             
