@@ -1,8 +1,6 @@
 {% extends "::base.html.twig" %}
 
 {% block body %}
-    Miasto: {{ city }}!
-    
     <div class="tablica bevel all" style="background: #aaa; padding: 50px 0;" ng-controller="TablicaController as tablica">
         <div style="background: #000; color: #fff; margin: 0 10px; box-sizing: border-box;">
             <h1 style="font-family: Calibri;">[[ tablica.getStop().name ]]</h1>
@@ -12,7 +10,7 @@
                     <th style="width: 65%; color: #fff; border-right: 3px solid #eee;">Kierunek</th>
                     <th style="width: 20%; color: #fff;">Odjazd</th>
                 </tr>
-                <tr ng-repeat="tram in tablica.trams" class="digital">
+                <tr ng-repeat="tram in tablica.getTrams()" class="digital">
                     <td>[[tram.line]]</td>
                     <td>[[tram.direction]]</td>
                     <td>[[tram.time]]</td>
@@ -29,6 +27,11 @@
     @font-face {
         font-family: 'Digital';
         src: url('/font/SFTelegraphic.ttf');
+    }
+    
+    .tablica h1 {
+        font-size: 32pt;
+        margin: 0;
     }
     
     table {

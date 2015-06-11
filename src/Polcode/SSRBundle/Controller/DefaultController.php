@@ -17,7 +17,7 @@ class DefaultController extends Controller {
             
             $stops = array();
             foreach($entities as $stop) {
-                if($stop->depertuares) $stops[] = array('id' => $stop->id, 'name' => $stop->name);
+                if(!empty($stop->depertuares->toArray())) $stops[] = array('id' => $stop->id, 'name' => $stop->name);
             }
             
             return new JsonResponse($stops);

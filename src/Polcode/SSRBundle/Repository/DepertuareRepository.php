@@ -13,7 +13,7 @@ class DepertuareRepository extends EntityRepository {
         ->select('d')
         ->from('SSRBundle:Depertuare', 'd')
         ->join('d.stop', 's')
-        ->where('d.hour >= ' . date("H"))
+        ->where('d.hour >= :hour')
         ->andWhere('s.id = :stop')
         ->orderBy('d.hour', 'DESC');
             
@@ -22,6 +22,7 @@ class DepertuareRepository extends EntityRepository {
         if(date("w") == 6) $qb->andWhere('d.type = \'h\'');
         
         $qb->setParameter('stop', $id);
+        $qb->setParameter('hour', (int) date("H"));
         
         return $qb->getQuery()->getResult();
     }

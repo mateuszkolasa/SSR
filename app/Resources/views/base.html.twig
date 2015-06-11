@@ -12,60 +12,103 @@
         <script type="text/javascript">
         (function(){
 
-			var stopObject = {id: 0, name: 'Polcodowa'};
+			var stopObject = {id: 3, name: 'Polcodowa'};
 			var href = '/{{ city }}/api/0';
+			var tablicaObject;
             
-            var app = angular.module('ssr', [ ]).config(['$interpolateProvider', function ($interpolateProvider) {
+            var app = angular.module('ssr', []).config(['$interpolateProvider', function ($interpolateProvider) {
                 $interpolateProvider.startSymbol('[[');
                 $interpolateProvider.endSymbol(']]');
             }]);
-        
-            app.controller('TablicaController', [ '$http', function($http) {
-        		var tablica = this;
-        		this.trams = [];
 
-        		this.test = function($http) {
-            		/*$http.get(href).success(function(data){
-                		alert('siema');
+            //rejestruję nowy serwis
+            app.factory('$tablicaService', ['$http', function($http) {
+        		this.trams = [];
+        		var tablica = this;
+
+            	return {
+                	update: function(stop) {
+                	    //tablica.trams = [];
+                	    $http.get('/{{ city }}/api/' + stop.id).success(function(data) {
+                		    if(data.length == 0) {
+                    			tablica.trams = [
+                    	        	{'line': '.', direction: null, time: null},
+                    	        	{'line': '.', direction: 'Koniec kursów', time: null},
+                    	        	{'line': '.', direction: null, time: null},
+                    	        	{'line': '.', direction: null, time: null},
+                    	        	{'line': '.', direction: null, time: null}
+                    	        ];
+                    		} else {
+                        		for(var x = data.length; x < 5; x++) {
+                            		data.push({'line': '.', direction: null, time: null});
+                            	}
+	                		    tablica.trams = data;
+                    		}
+                		}).error(function() {
+                		    tablica.trams = [{'line': null, direction: 'Proszę korzystać z rozkładów jazdy', time: null}]
+                    	});
+                    },
+                    getTrams: function() {
+                        return tablica.trams;
+                    }
+                };
+            }]);
+        
+            app.controller('TablicaController', [ '$http', '$scope', '$tablicaService', function($http, $scope, $tablicaService) {
+        		var tablica = this;
+        		tablicaObject = this;
+
+        		/*$scope.update = function() {
+            		alert('apdejt');
+        		    $http.get(href).success(function(data) {
+            		    //if(data.length == 0) {
+                			tablica.trams = [{'line': null, direction: 'Koniec kursów', time: null}]
+                		    return;
+                		//}
+                		
             			tablica.trams = data;
-            		}).error(function(){
-	                	alert('siema');
-                	});*/
-        		}
+            		}).error(function() {
+            			tablica.trams = [{'line': null, direction: 'Proszę korzystać z rozkładów jazdy', time: null}]
+                	});
+            	};*/
 
         		this.datetime = new Date();
 
         		this.getStop = function() {
             		return stopObject;
             	}
+
+            	this.getTrams = function() {
+            	    return $tablicaService.getTrams();
+                };
             }]);
 
-            app.controller('StopsController', [ '$http', '$scope', function($http, $scope) {
+            app.controller('StopsController', [ '$http', '$scope', '$tablicaService', function($http, $scope, $tablicaService) {
         		var st = this;
         		this.stops = [];
 
         		$http.get('/api/stops/{{ city }}').success(function(data){
             		st.stops = data;
             	});
-
-            	this.setStop = function(obj) {
-                	href = '/{{ city }}/api/' + obj.id;
+				
+        		this.update = function(obj) {
 					stopObject = obj;
-                };
+        			$tablicaService.update(obj);
+            	};
             }]);
            
         })();
         </script>
-        <div style="width: 20%; float: left;">
+        <div style="width: 15%; min-height: 100%; max-height: 100%;background: #333; float: left;">
             <h1>Przystanki</h1>
             <ul ng-controller="StopsController as st">
                 <li ng-repeat="stop in st.stops">
-                    <a href="#[[ stop.id ]]" ng-click="st.setStop(stop)">[[ stop.name ]]</a>
+                    <a href="#[[ stop.id ]]" ng-click="st.update(stop)">[[ stop.name ]]</a>
                 </li>
             </ul>
         </div>
 
-        <div style="width: 80%; margin-left: 20%;">
+        <div style="width: 85%; margin-left: 15%;">
             {% block body %}{% endblock %}
         </div>
         

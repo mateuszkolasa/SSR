@@ -12,13 +12,14 @@ use Polcode\SSRBundle\Entity\Depertuare;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 
-set_time_limit(600);
+set_time_limit(2400);
 class KrakowController extends CityController {
     
     private $dev = false;
-    private $entities = true;
+    private $entities = false;
     private $limit = 0;
     private $onlyTrams = true;
+    private $SQL = true;
     
     public function indexAction() {
         return $this->render('SSRBundle:Cities/Krakow:index.html.twig', array('name' => 'Kraków'));
@@ -59,7 +60,7 @@ class KrakowController extends CityController {
             
             $stops[$id]['name'] = $node->text();
             
-            if($this->entities) {
+            /*if($this->entities) {
                 $entity = $em->getRepository('SSRBundle:Stop')->findOneBy((array('name' => $node->text())));
                 if($entity == null) {
                     $entity = new Stop();
@@ -69,12 +70,12 @@ class KrakowController extends CityController {
                 }
                 
                 $stops[$id]['OBJ'] = $entity;
-            }
+            }*/
             
             $counter++;
         });
         
-        if($this->entities) $em->flush();
+        //if($this->entities) $em->flush();
         
         foreach($stops as $id => $stop) {
             $crawler = $client->request('GET', 'http://rozklady.mpk.krakow.pl/aktualne/p/' . $id . '.htm');
@@ -88,7 +89,7 @@ class KrakowController extends CityController {
                     
                     $line[] = implode('/', $tmp);
                     
-                    if($this->entities) {
+                    /*if($this->entities) {
                         $entity = $em->getRepository('SSRBundle:Line')->findOneBy((array('number' => $line[0], 'direction' => $line[1])));
                         if($entity == null) {
                             $entity = new Line();
@@ -100,10 +101,10 @@ class KrakowController extends CityController {
                         }
                         
                         $line['OBJ'] = $entity;
-                    }
+                    }*/
                     
                     $stops[$id]['lines'][] = $line;
-                    if($this->entities) $em->flush();
+                    //if($this->entities) $em->flush();
                 }
             });
                 
@@ -112,8 +113,8 @@ class KrakowController extends CityController {
         
         foreach($stops as $id => $stop) {
             $depertuares = array();
-            if(!array_key_exists('lines', $stop)) $stop['lines'] = array();
-            foreach($stop['lines'] as $idL => $line) {
+            if(!array_key_exists('lines', $stop)) $stops[$id]['lines'] = array();
+            foreach($stops[$id]['lines'] as $idL => $line) {
                 $crawler = $client->request('GET', $line[2]);
                 $crawler->filter('.celldepart table tr')->each(function ($node) use (&$stops, $id, $idL, &$line, &$depertuares, &$em) {
                     if($node->children()->attr('class') == 'cellday' || $node->children()->attr('class') == 'cellinfo') {
@@ -138,7 +139,7 @@ class KrakowController extends CityController {
                             if(!empty($minute) && $minute != '-') {
                                 $depertuares[$type][$hour][] = $value;
                         
-                                if($this->entities) {
+                                /*if($this->entities) {
                                     $entity = $em->getRepository('SSRBundle:Depertuare')->findOneBy((array('type' => $type, 'line' => $line['OBJ'], 'stop' => $stops[$id]['OBJ'])));
                                     if($entity == null) {
                                         $entity = new Depertuare();
@@ -148,12 +149,13 @@ class KrakowController extends CityController {
                                         $entity->minute = $value;
                                         $entity->type = $type;
                                         $em->persist($entity);
+                                        echo 'L: '.$line['OBJ']->number.', S: '.$stops[$id]['OBJ']->name.', T: '.$hour.':'.$value.'<br>';
                                     }
-                                }
+                                }*/
                             }
                         }
 
-                        $em->flush();
+                        //$em->flush();
                         $x++;
                     }
                 });
@@ -164,8 +166,50 @@ class KrakowController extends CityController {
             if($this->dev) break;
         }
         
-        if($this->entities) $em->flush();
-        if(!$this->entities) { echo '<pre>'; print_r($stops); die('</pre>---'); }
+        //if($this->entities) $em->flush();
+        if(!$this->entities && !$this->SQL) { echo '<pre>'; print_r($stops); die('</pre>---'); }
+        
+        if($this->SQL) {
+            
+            foreach($stops as $stopID => $stop) {
+                
+                $stopOBJ = $em->getRepository('SSRBundle:Stop')->findOneBy((array('name' => $stop['name'])));
+                if($stopOBJ == null) {
+                    $stopOBJ = new Stop();
+                    $stopOBJ->name = $stop['name'];
+                    $em->persist($stopOBJ);
+                }
+                
+                //linie
+                foreach($stops[$stopID]['lines'] as $lineID => $line) {
+                    $lineOBJ = $em->getRepository('SSRBundle:Line')->findOneBy((array('number' => $line[0], 'direction' => $line[1])));
+                    if($lineOBJ == null) {
+                        $lineOBJ = new Line();
+                        $lineOBJ->number = $line[0];
+                        $lineOBJ->direction = $line[1];
+                        $lineOBJ->addStop($stopOBJ);
+                        $em->persist($lineOBJ);
+                    }
+                    
+                    foreach($stops[$stopID]['lines'][$lineID][2] as $type => $depertuares) {
+                        foreach($depertuares as $hour => $minutes) {
+                            foreach($minutes as $minute) {
+                                $depertuareOBJ = new Depertuare();
+                                $depertuareOBJ->line = $lineOBJ;
+                                $depertuareOBJ->stop = $stopOBJ;
+                                $depertuareOBJ->type = $type;
+                                $depertuareOBJ->hour = $hour;
+                                $depertuareOBJ->minute = $minute;
+                                
+                                $em->persist($depertuareOBJ);
+                            }
+                        }
+                    }
+                    
+                    $em->flush();
+                }
+            }
+        }
         
         return new Response('DONE!');
     }
