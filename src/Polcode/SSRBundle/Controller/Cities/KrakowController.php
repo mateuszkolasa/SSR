@@ -36,8 +36,10 @@ class KrakowController extends CityController {
         $returnArray = array();
         $x = 0;
         foreach($depertuares as $dep) {
-            $returnArray[] = array('line' => $dep->line->number, 'direction' => $dep->line->direction, 'time' => $dep->hour .':' . $dep->minute);
-            if(++$x > 4) break;
+            $time = $dep->hour .':' . ($dep->minute<10 ? '0'.$dep->minute : $dep->minute);
+            if($time == date("H:i")) $time = '> > > >';
+            $returnArray[] = array('line' => $dep->line->number, 'direction' => $dep->line->direction, 'time' => $time);
+            if(++$x > 9) break;
         }
         
         return new JsonResponse($returnArray);
