@@ -12,7 +12,7 @@ use Polcode\SSRBundle\Entity\Depertuare;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 
-set_time_limit(2400);
+set_time_limit(4000);
 class KrakowController extends CityController {
     
     private $dev = false;

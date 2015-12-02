@@ -1,126 +1,17 @@
 <!DOCTYPE html>
-<html ng-app="ssr">
+<html >
     <head>
         <meta charset="UTF-8" />
         <title>{% block title %}Welcome!{% endblock %}</title>
         {% block stylesheets %}{% endblock %}
         <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
     </head>
-    <body>
-        
-        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.0/angular.js"></script>
-        <script type="text/javascript">
-        (function(){
-
-			var stopObject = {id: 3, name: 'Polcodowa'};
-			var href = '/{{ city }}/api/0';
-			var tablicaObject;
-            
-            var app = angular.module('ssr', []).config(['$interpolateProvider', function ($interpolateProvider) {
-                $interpolateProvider.startSymbol('[[');
-                $interpolateProvider.endSymbol(']]');
-            }]);
-
-            //rejestruję nowy serwis
-            app.factory('$tablicaService', ['$http', function($http) {
-        		this.trams = [
-      	        	{'line': '.', direction: null, time: null},
-    	        	{'line': '.', direction: 'Wybierz przystanek', time: null},
-    	        	{'line': '.', direction: null, time: null},
-    	        	{'line': '.', direction: 'z listy obok', time: null},
-    	        	{'line': '.', direction: null, time: null},
-    	        	{'line': '.', direction: null, time: null},
-    	        	{'line': '.', direction: null, time: null},
-    	        	{'line': '.', direction: null, time: null},
-    	        	{'line': '.', direction: null, time: null},
-    	        	{'line': '.', direction: null, time: null}
-    	        ];
-        		var tablica = this;
-
-            	return {
-                	update: function(stop) {
-                	    //tablica.trams = [];
-                	    $http.get('/{{ city }}/api/' + stop.id).success(function(data) {
-                		    if(data.length == 0) {
-                    			tablica.trams = [
-                    	        	{'line': '.', direction: null, time: null},
-                    	        	{'line': '.', direction: 'Koniec kursów', time: null},
-                    	        	{'line': '.', direction: null, time: null},
-                    	        	{'line': '.', direction: null, time: null},
-                    	        	{'line': '.', direction: null, time: null},
-                    	        	{'line': '.', direction: null, time: null},
-                    	        	{'line': '.', direction: null, time: null},
-                    	        	{'line': '.', direction: null, time: null},
-                    	        	{'line': '.', direction: null, time: null},
-                    	        	{'line': '.', direction: null, time: null}
-                    	        ];
-                    		} else {
-                        		for(var x = data.length; x < 10; x++) {
-                            		data.push({'line': '.', direction: null, time: null});
-                            	}
-	                		    tablica.trams = data;
-                    		}
-                		}).error(function() {
-                		    tablica.trams = [{'line': null, direction: 'Proszę korzystać z rozkładów jazdy', time: null}]
-                    	});
-                    },
-                    getTrams: function() {
-                        return tablica.trams;
-                    }
-                };
-            }]);
-        
-            app.controller('TablicaController', [ '$http', '$scope', '$tablicaService', function($http, $scope, $tablicaService) {
-        		var tablica = this;
-        		tablicaObject = this;
-
-        		/*$scope.update = function() {
-            		alert('apdejt');
-        		    $http.get(href).success(function(data) {
-            		    //if(data.length == 0) {
-                			tablica.trams = [{'line': null, direction: 'Koniec kursów', time: null}]
-                		    return;
-                		//}
-                		
-            			tablica.trams = data;
-            		}).error(function() {
-            			tablica.trams = [{'line': null, direction: 'Proszę korzystać z rozkładów jazdy', time: null}]
-                	});
-            	};*/
-
-        		this.datetime = new Date();
-
-        		this.getStop = function() {
-            		return stopObject;
-            	}
-
-            	this.getTrams = function() {
-            	    return $tablicaService.getTrams();
-                };
-            }]);
-
-            app.controller('StopsController', [ '$http', '$scope', '$tablicaService', function($http, $scope, $tablicaService) {
-        		var st = this;
-        		this.stops = [];
-
-        		$http.get('/api/stops/{{ city }}').success(function(data){
-            		st.stops = data;
-            	});
-				
-        		this.update = function(obj) {
-					stopObject = obj;
-        			$tablicaService.update(obj);
-            	};
-            }]);
-           
-        })();
-
-        </script>
-        <div class="slupek" id="slup">
+    <body id="app">
+        <div class="slupek" id="stops">
             <h1>Przystanki</h1>
-            <ul ng-controller="StopsController as st">
-                <li ng-repeat="stop in st.stops">
-                    <a href="#[[ stop.id ]]" ng-click="st.update(stop)">[[ stop.name ]]</a>
+            <ul>
+                <li v-for="stop in stops">
+                    <a href="#[[ stop.id ]]" v-on:click="update(stop)">[[ stop.name ]]</a>
                 </li>
             </ul>
         </div>
@@ -131,7 +22,83 @@
         
         {% block javascripts %}{% endblock %}
         <script type="text/javascript">
-        document.getElementById('slup').style.height = window.innerHeight + 'px';
+        document.getElementById('stops').style.height = window.innerHeight + 'px';
+        </script>
+        
+        <script type="text/javascript" src="https://cdn.jsdelivr.net/vue/latest/vue.js"></script>
+        <script type="text/javascript">
+		var stopObject = {id: 3, name: 'Polcodowa'};
+		var href = '/{{ city }}/api/0';
+		var tablicaObject;
+
+		Vue.config.delimiters = ['[[', ']]'];
+
+		
+		new Vue({
+            el: '#app',
+            data: {
+                stops: [],
+                trams: []
+            },
+            created: function () {
+                this.initialize();
+                this.getStops();
+            },
+			methods: {
+				initialize: function() {
+				    this.trams = [
+         	        	{'line': '.', direction: null, time: null},
+         	        	{'line': '.', direction: 'Wybierz przystanek', time: null},
+         	        	{'line': '.', direction: null, time: null},
+         	        	{'line': '.', direction: null, time: null},
+         	        	{'line': '.', direction: null, time: null},
+         	        	{'line': '.', direction: null, time: null},
+         	        	{'line': '.', direction: null, time: null},
+         	        	{'line': '.', direction: null, time: null},
+         	        	{'line': '.', direction: null, time: null},
+         	        	{'line': '.', direction: null, time: null}
+         	        ];
+				},				
+				getStops: function(){
+                    var xhr = new XMLHttpRequest();
+                    var self = this;
+                    xhr.open('GET', '/api/stops');
+                    xhr.onload = function () {
+                    	self.stops = JSON.parse(xhr.responseText)
+                    }
+                    xhr.send();
+				},
+            	update: function(stop) {
+                    var xhr = new XMLHttpRequest();
+                    var self = this;
+                    xhr.open('GET', '/{{ city }}/api/' + stop.id);
+                    xhr.onload = function () {
+                        var data = JSON.parse(xhr.responseText);
+                        if(data.length == 0) {
+                            self.trams = [
+                	        	{'line': '.', direction: null, time: null},
+                	        	{'line': '.', direction: 'Koniec kursów', time: null},
+                	        	{'line': '.', direction: null, time: null},
+                	        	{'line': '.', direction: null, time: null},
+                	        	{'line': '.', direction: null, time: null},
+                	        	{'line': '.', direction: null, time: null},
+                	        	{'line': '.', direction: null, time: null},
+                	        	{'line': '.', direction: null, time: null},
+                	        	{'line': '.', direction: null, time: null},
+                	        	{'line': '.', direction: null, time: null}
+                	        ];
+                        } else {
+                            self.trams = data;
+                            for(var x = data.length; x < 10; x++) {
+                                self.trams.push({'line': '.', direction: null, time: null});
+                    		}
+                            
+                        }
+                    }
+                    xhr.send();
+                }
+			}
+		});
         </script>
     </body>
 </html>
